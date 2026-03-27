@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0a12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>💰 Finanzas Vila</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ─── Variables ─────────────────────────────────── */
+:root {
+  --bg:        #0a0a12;
+  --surface:   #12121f;
+  --card:      #1a1a2e;
+  --border:    #252540;
+  --accent:    #e94560;
+  --gold:      #f5a623;
+  --green:     #00d97e;
+  --blue:      #4f8ef7;
+  --text:      #f0f0ff;
+  --muted:     #6b6b8a;
+  --font-head: 'Syne', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --radius:    16px;
+  --radius-sm: 10px;
+}
+
+/* ─── Reset ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ─── Noise overlay ─────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: 0.4;
+}
+
+/* ─── Layout ─────────────────────────────────────── */
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 0 100px;
+  position: relative; z-index: 1;
+}
+
+/* ─── Header ─────────────────────────────────────── */
+header {
+  padding: 24px 20px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo {
+  font-family: var(--font-head);
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.logo span { color: var(--accent); }
+.cfg-btn {
+  width: 38px; height: 38px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; transition: all .2s;
+}
+.cfg-btn:hover { border-color: var(--accent); }
+
+/* ─── Tabs ───────────────────────────────────────── */
+.tabs {
+  display: flex; gap: 4px;
+  padding: 0 20px 16px;
+}
+.tab {
+  flex: 1; padding: 8px 4px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); cursor: pointer;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  color: var(--muted); text-align: center; transition: all .2s;
+  letter-spacing: .5px; text-transform: uppercase;
+}
+.tab.active {
+  background: var(--accent); border-color: var(--accent);
+  color: #fff; font-weight: 600;
+}
+
+/* ─── Section ────────────────────────────────────── */
+.section { padding: 0 20px; display: none; }
+.section.visible { display: block; }
+
+/* ─── Card ───────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+}
+.card-title {
+  font-family: var(--font-head);
+  font-size: 11px; font-weight: 700;
+  color: var(--muted); letter-spacing: 2px;
+  text-transform: uppercase; margin-bottom: 16px;
+}
+
+/* ─── Form elements ──────────────────────────────── */
+.field { margin-bottom: 14px; }
+label {
+  display: block;
+  font-size: 10px; font-weight: 500;
+  color: var(--muted); letter-spacing: 1.5px;
+  text-transform: uppercase; margin-bottom: 6px;
+}
+input, select, textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-family: var(--font-mono); font-size: 15px;
+  color: var(--text);
+  transition: border-color .2s, box-shadow .2s;
+  -webkit-appearance: none; appearance: none;
+  outline: none;
+}
+input:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(233,69,96,.15);
+}
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6b8a' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+}
+textarea { resize: none; height: 70px; font-size: 13px; }
+input[type="date"] { color-scheme: dark; }
+
+/* ─── Monto display ──────────────────────────────── */
+.monto-display {
+  font-family: var(--font-head);
+  font-size: 42px; font-weight: 800;
+  color: var(--text); letter-spacing: -2px;
+  min-height: 54px; word-break: break-all;
+}
+.monto-prefix { color: var(--accent); }
+.monto-cuota-info {
+  font-size: 13px; color: var(--gold);
+  margin-top: 6px; min-height: 20px;
+  font-weight: 400;
+}
+
+/* ─── Numpad ─────────────────────────────────────── */
+.numpad {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-top: 12px;
+}
+.numpad-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px 8px;
+  font-family: var(--font-head); font-size: 20px; font-weight: 600;
+  color: var(--text); cursor: pointer;
+  transition: all .15s; user-select: none;
+  -webkit-user-select: none;
+}
+.numpad-btn:active { transform: scale(.94); background: var(--border); }
+.numpad-btn.del { color: var(--accent); font-size: 22px; }
+.numpad-btn.zero { grid-column: span 2; }
+
+/* ─── Tarjeta selector ───────────────────────────── */
+.card-selector {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.card-opt {
+  padding: 12px 10px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer; transition: all .2s;
+  text-align: center;
+}
+.card-opt.selected {
+  border-color: var(--accent);
+  background: rgba(233,69,96,.1);
+}
+.card-opt-name {
+  font-family: var(--font-head);
+  font-size: 12px; font-weight: 700;
+  color: var(--text); display: block;
+}
+.card-opt-sub {
+  font-size: 10px; color: var(--muted);
+  margin-top: 2px; display: block;
+}
+.card-opt .card-icon {
+  font-size: 20px; display: block; margin-bottom: 4px;
+}
+
+/* ─── Cuotas slider ──────────────────────────────── */
+.cuotas-row {
+  display: flex; align-items: center; gap: 12px;
+}
+.cuotas-num {
+  font-family: var(--font-head);
+  font-size: 36px; font-weight: 800;
+  color: var(--accent); min-width: 52px;
+  text-align: center; line-height: 1;
+}
+.cuotas-label {
+  font-size: 13px; color: var(--muted);
+}
+input[type="range"] {
+  flex: 1; height: 4px;
+  background: var(--border);
+  border-radius: 4px; cursor: pointer;
+  padding: 0; border: none;
+  accent-color: var(--accent);
+}
+
+/* ─── Categorías ─────────────────────────────────── */
+.cat-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.cat-opt {
+  padding: 10px 4px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer; transition: all .2s;
+  text-align: center;
+}
+.cat-opt.selected {
+  border-color: var(--blue);
+  background: rgba(79,142,247,.12);
+}
+.cat-opt .cat-icon { font-size: 20px; display: block; }
+.cat-opt .cat-name { font-size: 9px; color: var(--muted); margin-top: 3px; }
+
+/* ─── Submit ─────────────────────────────────────── */
+.submit-btn {
+  width: 100%; padding: 18px;
+  background: var(--accent);
+  border: none; border-radius: var(--radius);
+  font-family: var(--font-head); font-size: 16px; font-weight: 700;
+  color: #fff; cursor: pointer; letter-spacing: .5px;
+  transition: all .2s; margin-top: 4px;
+  position: relative; overflow: hidden;
+}
+.submit-btn:active { transform: scale(.98); }
+.submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+.submit-btn.loading::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,.15);
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 0; }
+  50%      { opacity: 1; }
+}
+
+/* ─── Toast ──────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 50px; padding: 12px 24px;
+  font-size: 14px; font-weight: 500;
+  opacity: 0; transition: all .3s; z-index: 999;
+  white-space: nowrap; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.ok  { border-color: var(--green); color: var(--green); }
+.toast.err { border-color: var(--accent); color: var(--accent); }
+
+/* ─── Historial ──────────────────────────────────── */
+.hist-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.hist-item:last-child { border-bottom: none; }
+.hist-icon {
+  width: 38px; height: 38px;
+  background: var(--surface);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.hist-info { flex: 1; min-width: 0; }
+.hist-desc {
+  font-family: var(--font-head); font-size: 14px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hist-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.hist-monto {
+  font-family: var(--font-head); font-size: 15px; font-weight: 700;
+  color: var(--accent); flex-shrink: 0;
+}
+
+/* ─── Cuotas activas ─────────────────────────────── */
+.cuota-item {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cuota-item:last-child { border-bottom: none; }
+.cuota-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.cuota-desc {
+  font-family: var(--font-head); font-size: 14px; font-weight: 600;
+  flex: 1; padding-right: 8px;
+}
+.cuota-monto {
+  font-family: var(--font-head); font-size: 15px; font-weight: 700;
+  color: var(--gold);
+}
+.cuota-bar-wrap {
+  height: 4px; background: var(--border);
+  border-radius: 4px; margin: 8px 0 4px; overflow: hidden;
+}
+.cuota-bar {
+  height: 100%; background: var(--accent);
+  border-radius: 4px; transition: width .5s ease;
+}
+.cuota-foot {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--muted);
+}
+
+/* ─── Setup screen ───────────────────────────────── */
+.setup-screen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 100;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+.setup-screen.hidden { display: none; }
+.setup-title {
+  font-family: var(--font-head);
+  font-size: 28px; font-weight: 800;
+  margin-bottom: 8px;
+}
+.setup-sub { color: var(--muted); font-size: 14px; margin-bottom: 32px; line-height: 1.6; }
+.setup-screen input {
+  max-width: 400px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+.setup-btn {
+  width: 100%; max-width: 400px;
+  padding: 16px;
+  background: var(--accent); border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-head); font-size: 16px; font-weight: 700;
+  color: #fff; cursor: pointer;
+}
+.setup-help {
+  font-size: 11px; color: var(--muted);
+  margin-top: 16px; line-height: 1.7; max-width: 340px;
+}
+.setup-help a { color: var(--blue); }
+
+/* ─── Bottom nav ─────────────────────────────────── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex; max-width: 480px; margin: 0 auto;
+  padding: 8px 0 env(safe-area-inset-bottom);
+  z-index: 50;
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 3px;
+  padding: 8px 4px;
+  cursor: pointer; background: none; border: none;
+  color: var(--muted); transition: color .2s;
+  font-family: var(--font-mono);
+}
+.nav-btn.active { color: var(--accent); }
+.nav-btn svg { width: 22px; height: 22px; }
+.nav-btn span { font-size: 9px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* ─── Empty state ─────────────────────────────────── */
+.empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+.empty .empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty p { font-size: 13px; line-height: 1.6; }
+
+/* ─── Persona toggle ─────────────────────────────── */
+.persona-row { display: flex; gap: 8px; }
+.persona-opt {
+  flex: 1; padding: 10px 8px; text-align: center;
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: var(--radius-sm); cursor: pointer;
+  font-size: 13px; font-weight: 500; transition: all .2s;
+}
+.persona-opt.selected {
+  border-color: var(--green);
+  background: rgba(0,217,126,.1);
+  color: var(--green);
+}
+</style>
+</head>
+<body>
+
+<!-- Setup screen -->
+<div class="setup-screen" id="setupScreen">
+  <div style="font-size:48px;margin-bottom:16px">💰</div>
+  <div class="setup-title">Finanzas <span style="color:var(--accent)">Vila</span></div>
+  <div class="setup-sub">Primera vez: pegá la URL de tu<br>Google Apps Script para conectar la planilla</div>
+  <input type="url" id="endpointInput" placeholder="https://script.google.com/macros/s/..." autocomplete="off" spellcheck="false">
+  <button class="setup-btn" onclick="saveEndpoint()">Conectar planilla →</button>
+  <div class="setup-help">
+    📋 Cómo obtener la URL:<br>
+    1. Abrí <a href="https://script.google.com" target="_blank">script.google.com</a><br>
+    2. Pegá el código <code>Code.gs</code><br>
+    3. Implementar → Nueva implementación → App web<br>
+    4. Acceso: <strong>Cualquier persona</strong><br>
+    5. Copiá la URL y pegala arriba
+  </div>
+</div>
+
+<!-- App -->
+<div class="app">
+  <header>
+    <div class="logo">💰 <span>Vila</span> Finanzas</div>
+    <button class="cfg-btn" onclick="showSetup()" title="Configuración">⚙️</button>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('nuevo')">＋ Nuevo</div>
+    <div class="tab" onclick="switchTab('historial')">Historial</div>
+    <div class="tab" onclick="switchTab('cuotas')">Cuotas</div>
+  </div>
+
+  <!-- ── TAB: NUEVO GASTO ─────────────────────────── -->
+  <div class="section visible" id="tab-nuevo">
+
+    <!-- Monto -->
+    <div class="card">
+      <div class="card-title">Monto total</div>
+      <div class="monto-display">
+        <span class="monto-prefix">$</span><span id="montoDisplay">0</span>
+      </div>
+      <div class="monto-cuota-info" id="cuotaInfo"></div>
+      <div class="numpad">
+        <button class="numpad-btn" onclick="numpad('1')">1</button>
+        <button class="numpad-btn" onclick="numpad('2')">2</button>
+        <button class="numpad-btn" onclick="numpad('3')">3</button>
+        <button class="numpad-btn" onclick="numpad('4')">4</button>
+        <button class="numpad-btn" onclick="numpad('5')">5</button>
+        <button class="numpad-btn" onclick="numpad('6')">6</button>
+        <button class="numpad-btn" onclick="numpad('7')">7</button>
+        <button class="numpad-btn" onclick="numpad('8')">8</button>
+        <button class="numpad-btn" onclick="numpad('9')">9</button>
+        <button class="numpad-btn" onclick="numpad('.')">.</button>
+        <button class="numpad-btn zero" onclick="numpad('0')">0</button>
+        <button class="numpad-btn del" onclick="numpad('del')">⌫</button>
+      </div>
+    </div>
+
+    <!-- Descripción -->
+    <div class="card">
+      <div class="card-title">¿En qué gastaste?</div>
+      <div class="field">
+        <input type="text" id="descripcion" placeholder="Ej: Supermercado Coto, Farmacity..." autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="fecha">
+      </div>
+    </div>
+
+    <!-- Tarjeta -->
+    <div class="card">
+      <div class="card-title">Con qué pagás</div>
+      <div class="card-selector" id="cardSelector">
+        <div class="card-opt selected" data-val="VISA BNA" onclick="selectCard(this)">
+          <span class="card-icon">💳</span>
+          <span class="card-opt-name">VISA BNA</span>
+          <span class="card-opt-sub">Banco Nación</span>
+        </div>
+        <div class="card-opt" data-val="VISA PATAGONIA" onclick="selectCard(this)">
+          <span class="card-icon">💳</span>
+          <span class="card-opt-name">VISA PAT.</span>
+          <span class="card-opt-sub">Patagonia</span>
+        </div>
+        <div class="card-opt" data-val="MC PATAGONIA" onclick="selectCard(this)">
+          <span class="card-icon">💳</span>
+          <span class="card-opt-name">MC PAT.</span>
+          <span class="card-opt-sub">Mastercard</span>
+        </div>
+        <div class="card-opt" data-val="MercadoPago" onclick="selectCard(this)">
+          <span class="card-icon">📱</span>
+          <span class="card-opt-name">MercadoPago</span>
+          <span class="card-opt-sub">Digital</span>
+        </div>
+        <div class="card-opt" data-val="Transferencia" onclick="selectCard(this)">
+          <span class="card-icon">🏦</span>
+          <span class="card-opt-name">Transf.</span>
+          <span class="card-opt-sub">CBU</span>
+        </div>
+        <div class="card-opt" data-val="Efectivo" onclick="selectCard(this)">
+          <span class="card-icon">💵</span>
+          <span class="card-opt-name">Efectivo</span>
+          <span class="card-opt-sub">Cash</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cuotas -->
+    <div class="card" id="cuotasCard">
+      <div class="card-title">Cuotas</div>
+      <div class="cuotas-row">
+        <div class="cuotas-num" id="cuotasNum">1</div>
+        <div>
+          <div class="cuotas-label" id="cuotasLabel">Pago en 1 cuota</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px" id="cuotasMontoPorCuota"></div>
+        </div>
+      </div>
+      <input type="range" id="cuotasRange" min="1" max="36" value="1"
+             oninput="updateCuotas(this.value)" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px">
+        <span>1 cuota</span><span>12</span><span>24</span><span>36</span>
+      </div>
+    </div>
+
+    <!-- Categoría -->
+    <div class="card">
+      <div class="card-title">Categoría</div>
+      <div class="cat-grid" id="catGrid">
+        <div class="cat-opt selected" data-val="Supermercado" onclick="selectCat(this)"><span class="cat-icon">🛒</span><span class="cat-name">Super</span></div>
+        <div class="cat-opt" data-val="Farmacia" onclick="selectCat(this)"><span class="cat-icon">💊</span><span class="cat-name">Farmacia</span></div>
+        <div class="cat-opt" data-val="Educación" onclick="selectCat(this)"><span class="cat-icon">📚</span><span class="cat-name">Educación</span></div>
+        <div class="cat-opt" data-val="Transporte" onclick="selectCat(this)"><span class="cat-icon">🚗</span><span class="cat-name">Transp.</span></div>
+        <div class="cat-opt" data-val="Gastronomía" onclick="selectCat(this)"><span class="cat-icon">🍕</span><span class="cat-name">Comida</span></div>
+        <div class="cat-opt" data-val="Salud" onclick="selectCat(this)"><span class="cat-icon">🏥</span><span class="cat-name">Salud</span></div>
+        <div class="cat-opt" data-val="Ropa" onclick="selectCat(this)"><span class="cat-icon">👕</span><span class="cat-name">Ropa</span></div>
+        <div class="cat-opt" data-val="Electrónica" onclick="selectCat(this)"><span class="cat-icon">📱</span><span class="cat-name">Electro</span></div>
+        <div class="cat-opt" data-val="Hogar" onclick="selectCat(this)"><span class="cat-icon">🏠</span><span class="cat-name">Hogar</span></div>
+        <div class="cat-opt" data-val="Entretenimiento" onclick="selectCat(this)"><span class="cat-icon">🎬</span><span class="cat-name">Entret.</span></div>
+        <div class="cat-opt" data-val="Regalos" onclick="selectCat(this)"><span class="cat-icon">🎁</span><span class="cat-name">Regalos</span></div>
+        <div class="cat-opt" data-val="Otros" onclick="selectCat(this)"><span class="cat-icon">📦</span><span class="cat-name">Otros</span></div>
+      </div>
+    </div>
+
+    <!-- Persona + Notas -->
+    <div class="card">
+      <div class="card-title">Quién gasta</div>
+      <div class="persona-row" id="personaRow">
+        <div class="persona-opt selected" data-val="Vila Maria" onclick="selectPersona(this)">👩 Vila Maria</div>
+        <div class="persona-opt" data-val="Persona 2" onclick="selectPersona(this)">👤 Persona 2</div>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>Notas (opcional)</label>
+        <textarea id="notas" placeholder="Ej: compra navideña, regalo cumple..."></textarea>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submitBtn" onclick="submitGasto()">
+      Registrar gasto →
+    </button>
+
+  </div><!-- /tab-nuevo -->
+
+  <!-- ── TAB: HISTORIAL ────────────────────────────── -->
+  <div class="section" id="tab-historial">
+    <div class="card">
+      <div class="card-title">Últimos gastos registrados</div>
+      <div id="histList">
+        <div class="empty">
+          <div class="empty-icon">📋</div>
+          <p>Todavía no registraste gastos desde esta app.<br>Usá la pestaña <strong>＋ Nuevo</strong> para empezar.</p>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;padding:12px 0">
+      <button onclick="clearHistory()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--font-mono)">
+        Limpiar historial local
+      </button>
+    </div>
+  </div>
+
+  <!-- ── TAB: CUOTAS ───────────────────────────────── -->
+  <div class="section" id="tab-cuotas">
+    <div class="card" id="cuotasSummary" style="text-align:center;padding:16px">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Total en cuotas este mes</div>
+      <div style="font-family:var(--font-head);font-size:38px;font-weight:800;color:var(--gold)" id="cuotasTotalMes">—</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Cuotas activas</div>
+      <div id="cuotasList">
+        <div class="empty">
+          <div class="empty-icon">🔄</div>
+          <p>Cargando cuotas desde la planilla...</p>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;padding:8px 0">
+      <button onclick="loadCuotas()" style="background:none;border:1px solid var(--border);border-radius:50px;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--font-mono);padding:8px 20px">
+        ↻ Actualizar
+      </button>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Estado global ────────────────────────────────────────────────────────────
+let montoStr = "0";
+let cuotasVal = 1;
+let selectedCard = "VISA BNA";
+let selectedCat  = "Supermercado";
+let selectedPersona = "Vila Maria";
+
+const CAT_ICONS = {
+  "Supermercado":"🛒","Farmacia":"💊","Educación":"📚","Transporte":"🚗",
+  "Gastronomía":"🍕","Salud":"🏥","Ropa":"👕","Electrónica":"📱",
+  "Hogar":"🏠","Entretenimiento":"🎬","Regalos":"🎁","Otros":"📦"
+};
+const CARD_ICONS = {
+  "VISA BNA":"💳","VISA PATAGONIA":"💳","MC PATAGONIA":"💳",
+  "MercadoPago":"📱","Transferencia":"🏦","Efectivo":"💵","Débito":"💳"
+};
+
+// ─── Endpoint ─────────────────────────────────────────────────────────────────
+function getEndpoint() { return localStorage.getItem("finanzas_endpoint") || ""; }
+function saveEndpoint() {
+  const url = document.getElementById("endpointInput").value.trim();
+  if (!url.startsWith("https://script.google.com")) {
+    toast("URL inválida — debe ser de script.google.com", "err"); return;
+  }
+  localStorage.setItem("finanzas_endpoint", url);
+  document.getElementById("setupScreen").classList.add("hidden");
+  toast("✅ Planilla conectada", "ok");
+  loadCuotas();
+}
+function showSetup() {
+  document.getElementById("endpointInput").value = getEndpoint();
+  document.getElementById("setupScreen").classList.remove("hidden");
+}
+function checkSetup() {
+  if (!getEndpoint()) document.getElementById("setupScreen").classList.remove("hidden");
+  else document.getElementById("setupScreen").classList.add("hidden");
+}
+
+// ─── Numpad ───────────────────────────────────────────────────────────────────
+function numpad(key) {
+  if (key === "del") {
+    montoStr = montoStr.length > 1 ? montoStr.slice(0,-1) : "0";
+  } else if (key === ".") {
+    if (!montoStr.includes(".")) montoStr += ".";
+  } else {
+    if (montoStr === "0") montoStr = key;
+    else if (montoStr.length < 12) montoStr += key;
+  }
+  updateMontoDisplay();
+}
+
+function updateMontoDisplay() {
+  const val = parseFloat(montoStr) || 0;
+  document.getElementById("montoDisplay").textContent = fmtNum(val);
+  updateCuotaInfo();
+}
+
+function fmtNum(n) {
+  return n.toLocaleString("es-AR", {minimumFractionDigits: montoStr.includes(".") ? (montoStr.split(".")[1]?.length || 0) : 0, maximumFractionDigits: 2});
+}
+
+function fmtPeso(n) {
+  return "$" + n.toLocaleString("es-AR", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+// ─── Cuotas ───────────────────────────────────────────────────────────────────
+function updateCuotas(v) {
+  cuotasVal = parseInt(v);
+  document.getElementById("cuotasNum").textContent = cuotasVal;
+  document.getElementById("cuotasLabel").textContent =
+    cuotasVal === 1 ? "Pago en 1 cuota" : `${cuotasVal} cuotas mensuales`;
+  updateCuotaInfo();
+}
+
+function updateCuotaInfo() {
+  const total = parseFloat(montoStr) || 0;
+  const por   = total / cuotasVal;
+  const infoEl = document.getElementById("cuotaInfo");
+  const montoEl= document.getElementById("cuotasMontoPorCuota");
+  if (cuotasVal > 1 && total > 0) {
+    infoEl.textContent  = `${cuotasVal} × ${fmtPeso(por)} / mes`;
+    montoEl.textContent = fmtPeso(por) + " por cuota";
+  } else {
+    infoEl.textContent  = "";
+    montoEl.textContent = "";
+  }
+}
+
+// ─── Selectors ────────────────────────────────────────────────────────────────
+function selectCard(el) {
+  document.querySelectorAll(".card-opt").forEach(e => e.classList.remove("selected"));
+  el.classList.add("selected");
+  selectedCard = el.dataset.val;
+  const isTarjeta = ["VISA BNA","VISA PATAGONIA","MC PATAGONIA"].includes(selectedCard);
+  document.getElementById("cuotasCard").style.opacity = isTarjeta ? "1" : ".4";
+  document.getElementById("cuotasCard").style.pointerEvents = isTarjeta ? "" : "none";
+  if (!isTarjeta) { cuotasVal = 1; document.getElementById("cuotasRange").value = 1; updateCuotas(1); }
+}
+
+function selectCat(el) {
+  document.querySelectorAll(".cat-opt").forEach(e => e.classList.remove("selected"));
+  el.classList.add("selected");
+  selectedCat = el.dataset.val;
+}
+
+function selectPersona(el) {
+  document.querySelectorAll(".persona-opt").forEach(e => e.classList.remove("selected"));
+  el.classList.add("selected");
+  selectedPersona = el.dataset.val;
+}
+
+// ─── Submit ───────────────────────────────────────────────────────────────────
+async function submitGasto() {
+  const endpoint = getEndpoint();
+  if (!endpoint) { showSetup(); return; }
+
+  const monto = parseFloat(montoStr);
+  const desc  = document.getElementById("descripcion").value.trim();
+  const fecha = document.getElementById("fecha").value;
+  const notas = document.getElementById("notas").value.trim();
+
+  if (monto <= 0)  { toast("Ingresá un monto válido", "err"); return; }
+  if (!desc)       { toast("Escribí una descripción", "err"); return; }
+  if (!fecha)      { toast("Seleccioná la fecha", "err"); return; }
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.classList.add("loading");
+  btn.textContent = "Registrando...";
+
+  const payload = {
+    action: "addGasto",
+    fecha, descripcion: desc,
+    categoria: selectedCat,
+    montoTotal: monto,
+    tarjeta: selectedCard,
+    cuotas: cuotasVal,
+    persona: selectedPersona,
+    notas,
+  };
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      toast(data.mensaje || "✅ Registrado", "ok");
+      saveToHistory(payload);
+      resetForm();
+    } else {
+      toast("Error: " + (data.error || "desconocido"), "err");
+    }
+  } catch (err) {
+    toast("Error de conexión. Verificá la URL.", "err");
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove("loading");
+    btn.textContent = "Registrar gasto →";
+  }
+}
+
+function resetForm() {
+  montoStr = "0";
+  document.getElementById("montoDisplay").textContent = "0";
+  document.getElementById("descripcion").value = "";
+  document.getElementById("notas").value = "";
+  document.getElementById("cuotaInfo").textContent = "";
+  cuotasVal = 1;
+  document.getElementById("cuotasRange").value = 1;
+  updateCuotas(1);
+}
+
+// ─── Historial local ──────────────────────────────────────────────────────────
+function saveToHistory(g) {
+  let hist = JSON.parse(localStorage.getItem("finanzas_hist") || "[]");
+  hist.unshift({ ...g, ts: Date.now() });
+  if (hist.length > 50) hist = hist.slice(0, 50);
+  localStorage.setItem("finanzas_hist", JSON.stringify(hist));
+  renderHistory();
+}
+
+function renderHistory() {
+  const hist = JSON.parse(localStorage.getItem("finanzas_hist") || "[]");
+  const el = document.getElementById("histList");
+  if (!hist.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><p>Todavía no registraste gastos desde esta app.<br>Usá <strong>＋ Nuevo</strong> para empezar.</p></div>`;
+    return;
+  }
+  el.innerHTML = hist.slice(0, 20).map(g => {
+    const icon = CAT_ICONS[g.categoria] || "📦";
+    const cuotaStr = g.cuotas > 1 ? ` · ${g.cuotas}c` : "";
+    const date = new Date(g.fecha).toLocaleDateString("es-AR", {day:"2-digit",month:"short"});
+    return `<div class="hist-item">
+      <div class="hist-icon">${icon}</div>
+      <div class="hist-info">
+        <div class="hist-desc">${g.descripcion}</div>
+        <div class="hist-meta">${g.tarjeta}${cuotaStr} · ${date}</div>
+      </div>
+      <div class="hist-monto">${fmtPeso(g.montoTotal)}</div>
+    </div>`;
+  }).join("");
+}
+
+function clearHistory() {
+  if (!confirm("¿Limpiar historial local?")) return;
+  localStorage.removeItem("finanzas_hist");
+  renderHistory();
+}
+
+// ─── Cuotas activas ────────────────────────────────────────────────────────────
+async function loadCuotas() {
+  const endpoint = getEndpoint();
+  if (!endpoint) return;
+
+  document.getElementById("cuotasList").innerHTML =
+    `<div class="empty"><p>Cargando...</p></div>`;
+
+  try {
+    const res = await fetch(endpoint + "?action=getCuotas");
+    const data = await res.json();
+
+    if (!data.ok || !data.cuotas.length) {
+      document.getElementById("cuotasList").innerHTML =
+        `<div class="empty"><div class="empty-icon">✅</div><p>No hay cuotas activas registradas.</p></div>`;
+      document.getElementById("cuotasTotalMes").textContent = fmtPeso(0);
+      return;
+    }
+
+    let totalMes = 0;
+    data.cuotas.forEach(c => { totalMes += parseFloat(c.montoCuota) || 0; });
+    document.getElementById("cuotasTotalMes").textContent = fmtPeso(totalMes);
+
+    document.getElementById("cuotasList").innerHTML = data.cuotas.map(c => {
+      const pct = Math.round(((c.totalCuotas - c.cuotasPend) / c.totalCuotas) * 100);
+      return `<div class="cuota-item">
+        <div class="cuota-header">
+          <div class="cuota-desc">${c.descripcion}</div>
+          <div class="cuota-monto">${fmtPeso(c.montoCuota)}/mes</div>
+        </div>
+        <div class="cuota-bar-wrap">
+          <div class="cuota-bar" style="width:${pct}%"></div>
+        </div>
+        <div class="cuota-foot">
+          <span>${c.tarjeta}</span>
+          <span>Cuota ${c.totalCuotas - c.cuotasPend + 1}/${c.totalCuotas} · hasta ${c.fechaFin}</span>
+        </div>
+      </div>`;
+    }).join("");
+  } catch (err) {
+    document.getElementById("cuotasList").innerHTML =
+      `<div class="empty"><p>No se pudo conectar con la planilla.<br>Verificá la URL en ⚙️</p></div>`;
+  }
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll(".tab").forEach((t,i) => {
+    t.classList.toggle("active", ["nuevo","historial","cuotas"][i] === name);
+  });
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("visible"));
+  document.getElementById("tab-" + name).classList.add("visible");
+  if (name === "historial") renderHistory();
+  if (name === "cuotas")    loadCuotas();
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type="ok") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = "toast show " + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = "toast"; }, 3000);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  // Fecha de hoy por defecto
+  document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
+
+  checkSetup();
+  renderHistory();
+  if (getEndpoint()) loadCuotas();
+});
+</script>
+</body>
+</html>
