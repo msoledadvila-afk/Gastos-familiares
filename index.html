@@ -759,11 +759,12 @@ let pendingFijoPagar = false;
 let _fijoItems = [];
 
 // ─── ENDPOINT ────────────────────────────────────────────────────────────────
-const getEP = () => localStorage.getItem("fv_ep") || "";
+const DEFAULT_EP = "https://script.google.com/macros/s/AKfycbyPM2BTgx5f-HJv1radSd4TVNWQ7f9sO7E258q8BX4vYZ6tkM3DPEDCJLIWJh5z8wiT/exec";
+const getEP = () => localStorage.getItem("fv_ep") || DEFAULT_EP;
 function saveEndpoint(){
   const v = document.getElementById("endpointInput").value.trim();
   if(!v.startsWith("https://script.google.com")){ toast("URL inválida","err"); return; }
-  localStorage.setItem("fv_ep",v);
+  localStorage.setItem("fv_ep", v);
   document.getElementById("setup").classList.add("hidden");
   toast("✅ Conectado","ok");
   refreshAll();
@@ -773,8 +774,8 @@ function showSetup(){
   document.getElementById("setup").classList.remove("hidden");
 }
 function checkSetup(){
-  if(!getEP()) document.getElementById("setup").classList.remove("hidden");
-  else document.getElementById("setup").classList.add("hidden");
+  // URL por defecto siempre disponible — no mostrar setup al iniciar
+  document.getElementById("setup").classList.add("hidden");
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
