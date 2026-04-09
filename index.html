@@ -833,13 +833,26 @@ function refreshAll(){
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
 async function loadDashboard(){
-  try{
-    const [td,cd] = await Promise.all([
-      apiGet("getTablero"),
-      apiGet("getCuotas"),
-    ]);
-    renderDashboard(td, cd);
-  } catch(e){ console.error(e); }
+  // Limpiar estado anterior
+  document.getElementById("db-balance").textContent = "—";
+  document.getElementById("db-balance").className   = "balance-amount neutral";
+  document.getElementById("db-balance-sub").textContent = "Cargando...";
+  ["db-egresos","db-cuotas","db-fijos-pag","db-fijos-pend"].forEach(id => {
+    document.getElementById(id).textContent = "$—";
+  });
+  document.getElementById("db-tarjetas").innerHTML  =
+    '<div class="loader"><div class="spin-icon"></div>Cargando...</div>';
+  document.getElementById("db-proyeccion").innerHTML =
+    '<div class="loader"><div class="spin-icon"></div></div>';
+
+  try {
+    // Una sola llamada a getTablero que ya trae todo (cuotas incluidas, sin recalcular)
+    const td = await apiGet("getTablero");
+    renderDashboard(td, null);
+  } catch(e) {
+    console.error(e);
+    document.getElementById("db-balance-sub").textContent = "Error al cargar — tocá ↻ para reintentar";
+  }
 }
 
 function renderDashboard(td, cd){
