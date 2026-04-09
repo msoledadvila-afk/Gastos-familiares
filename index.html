@@ -760,7 +760,9 @@ let _fijoItems = [];
 
 // ─── ENDPOINT ────────────────────────────────────────────────────────────────
 const DEFAULT_EP = "https://script.google.com/macros/s/AKfycbwHQJA6aTOdchPFERvrfC8uyhEJ92Uz5Zh194u-ArFa19q1LeF1x02nLDOoBRRvBqUA/exec";
-const getEP = () => localStorage.getItem("fv_ep") || DEFAULT_EP;
+// Siempre limpiar URL vieja y usar la hardcodeada
+localStorage.removeItem("fv_ep");
+const getEP = () => DEFAULT_EP;
 function saveEndpoint(){
   const v = document.getElementById("endpointInput").value.trim();
   if(!v.startsWith("https://script.google.com")){ toast("URL inválida","err"); return; }
