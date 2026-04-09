@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080B14">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Finanzas Compartidas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -981,44 +980,60 @@ async function loadGastosFijos(){
 }
 
 function renderGastosFijos(items){
-  let pagados=0, pendientes=0;
+  // Todos los ítems con monto = registrados en el Sheet
+  // Los que no tienen monto = aún no cargados este mes
+  // El "pagado" real se verifica en PAGOS DEL MES con el checkbox
+  let conMonto = 0, sinMonto = 0;
   const bySec = {};
 
   items.forEach(item => {
     if(!bySec[item.categoria]) bySec[item.categoria]=[];
     bySec[item.categoria].push(item);
-    if(item.pagado) pagados += item.monto;
-    else pendientes += item.monto;
+    if(item.monto > 0) conMonto += item.monto;
+    else sinMonto++;
   });
 
-  document.getElementById("fijos-tot-pag").textContent  = fmtPeso(pagados);
-  document.getElementById("fijos-tot-pend").textContent = fmtPeso(pendientes);
+  document.getElementById("fijos-tot-pag").textContent  = fmtPeso(conMonto);
+  document.getElementById("fijos-tot-pend").textContent = sinMonto + " sin dato";
+
+  // Cambiar labels de las tarjetas superiores
+  document.querySelector("#fijos-totals-row .fijo-total-label").textContent = "Con monto este mes";
+  const labels = document.querySelectorAll("#fijos-totals-row .fijo-total-label");
+  if(labels[1]) labels[1].textContent = "Sin dato aún";
 
   let html = "";
   for(const [sec, itms] of Object.entries(bySec)){
     html += `<div class="fijos-section">
       <div class="fijos-section-title">${sec}</div>`;
     itms.forEach(item => {
-      const checkCls = item.pagado ? "checked" : (item.monto>0?"":"");
-      const icon = item.pagado ? "✓" : "";
-      html += `<div class="fijo-item" onclick="toggleFijo(${item.row},${!item.pagado},'${item.descripcion.replace(/'/g,"\\'")}',${item.monto})">
-        <div class="fijo-check ${checkCls}">${icon}</div>
+      // Sin onclick — la hoja GASTOS FIJOS es de solo lectura desde la app.
+      // La verificación de pago se hace en PAGOS DEL MES del Sheet.
+      const tieneData = item.monto > 0;
+      html += `<div class="fijo-item" style="cursor:default">
+        <div class="fijo-check ${tieneData ? 'checked' : ''}">
+          ${tieneData ? '✓' : ''}
+        </div>
         <div class="fijo-info">
           <div class="fijo-name">${item.descripcion}</div>
-          ${item.pagado ? `<div class="fijo-meta">✅ ${item.pago} · ${item.fechaPago}</div>` :
-            item.monto > 0 ? '<div class="fijo-meta" style="color:var(--gold)">⏳ Pendiente de marcar</div>' :
-            '<div class="fijo-meta">📝 Sin dato este mes</div>'}
+          ${tieneData
+            ? '<div class="fijo-meta" style="color:var(--green)">✅ Monto registrado</div>'
+            : '<div class="fijo-meta">📝 Sin dato este mes — cargarlo en el Sheet</div>'}
         </div>
         <div class="fijo-amount">
-          ${item.monto > 0
+          ${tieneData
             ? `<div class="amt">${fmtPeso(item.monto)}</div>`
             : `<div class="amt zero">—</div>`}
-          ${item.pagado && item.pago ? `<div class="quien">${item.pago}</div>` : ""}
         </div>
       </div>`;
     });
     html += `</div>`;
   }
+
+  // Nota aclaratoria al final
+  html += `<div style="padding:14px 14px 4px;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);margin-top:8px">
+    ✏️ <strong>Los montos se cargan directamente en el Sheet</strong> (pestaña GASTOS FIJOS).<br>
+    ✅ <strong>La verificación de pago</strong> se hace en la pestaña PAGOS DEL MES del Sheet.
+  </div>`;
 
   if(!html) html = '<div class="empty"><div class="empty-icon">📋</div><p>No hay ítems de gastos fijos</p></div>';
   document.getElementById("fijos-list").innerHTML = html;
