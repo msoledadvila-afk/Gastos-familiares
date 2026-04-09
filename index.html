@@ -767,17 +767,13 @@ function checkSetup(){
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 // Apps Script requiere GET para evitar CORS desde GitHub Pages.
-// POST solo para acciones de escritura (addGasto, marcarFijoPagado).
+const API_TIMEOUT_MS = 15000; // 15 segundos máximo de espera
+
 async function api(payload){
   const ep = getEP();
-  if(!ep){ showSetup(); throw new Error("Sin endpoint"); }
-  // Convertir payload a query string para evitar preflight CORS
   const params = new URLSearchParams({ data: JSON.stringify(payload) });
   try {
-    const res  = await fetch(ep + "?" + params.toString(), {
-      method:   "GET",
-      redirect: "follow",
-    });
+    const res  = await fetchConTimeout(ep + "?" + params.toString());
     const text = await res.text();
     try { return JSON.parse(text); }
     catch(e){ console.error("Respuesta no JSON:", text.slice(0,200)); throw e; }
@@ -789,12 +785,8 @@ async function api(payload){
 
 async function apiGet(action){
   const ep = getEP();
-  if(!ep){ showSetup(); throw new Error("Sin endpoint"); }
   try {
-    const res  = await fetch(ep + "?action=" + action, {
-      method:   "GET",
-      redirect: "follow",
-    });
+    const res  = await fetchConTimeout(ep + "?action=" + action);
     const text = await res.text();
     try { return JSON.parse(text); }
     catch(e){ console.error("Respuesta no JSON:", text.slice(0,200)); throw e; }
@@ -802,6 +794,14 @@ async function apiGet(action){
     console.error("API GET error:", e);
     throw e;
   }
+}
+
+// fetch con timeout para no quedarse colgado
+function fetchConTimeout(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  return fetch(url, { method:"GET", redirect:"follow", signal: controller.signal })
+    .finally(() => clearTimeout(timer));
 }
 
 // ─── FORMAT ──────────────────────────────────────────────────────────────────
@@ -833,10 +833,9 @@ function refreshAll(){
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
 async function loadDashboard(){
-  // Limpiar estado anterior
   document.getElementById("db-balance").textContent = "—";
   document.getElementById("db-balance").className   = "balance-amount neutral";
-  document.getElementById("db-balance-sub").textContent = "Cargando...";
+  document.getElementById("db-balance-sub").textContent = "Conectando con la planilla...";
   ["db-egresos","db-cuotas","db-fijos-pag","db-fijos-pend"].forEach(id => {
     document.getElementById(id).textContent = "$—";
   });
@@ -846,13 +845,27 @@ async function loadDashboard(){
     '<div class="loader"><div class="spin-icon"></div></div>';
 
   try {
-    // Una sola llamada a getTablero que ya trae todo (cuotas incluidas, sin recalcular)
     const td = await apiGet("getTablero");
-    renderDashboard(td, null);
+    if (td && td.ok) {
+      renderDashboard(td, null);
+    } else {
+      const msg = td && td.error ? td.error : "Sin datos";
+      _dashError("Error: " + msg);
+    }
   } catch(e) {
     console.error(e);
-    document.getElementById("db-balance-sub").textContent = "Error al cargar — tocá ↻ para reintentar";
+    const esTimeout = e.name === "AbortError";
+    _dashError(esTimeout
+      ? "Tiempo de espera agotado — el script tardó más de 15s. Tocá ↻"
+      : "Error de conexión — verificá que el script esté publicado. Tocá ↻");
   }
+}
+
+function _dashError(msg) {
+  document.getElementById("db-balance-sub").textContent = msg;
+  document.getElementById("db-tarjetas").innerHTML =
+    '<div class="empty"><div class="empty-icon">📡</div><p>' + msg + '</p></div>';
+  document.getElementById("db-proyeccion").innerHTML = "";
 }
 
 function renderDashboard(td, cd){
