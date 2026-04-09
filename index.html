@@ -759,7 +759,7 @@ let pendingFijoPagar = false;
 let _fijoItems = [];
 
 // ─── ENDPOINT ────────────────────────────────────────────────────────────────
-const DEFAULT_EP = "https://script.google.com/macros/s/AKfycbyPM2BTgx5f-HJv1radSd4TVNWQ7f9sO7E258q8BX4vYZ6tkM3DPEDCJLIWJh5z8wiT/exec";
+const DEFAULT_EP = "https://script.google.com/macros/s/AKfycbwHQJA6aTOdchPFERvrfC8uyhEJ92Uz5Zh194u-ArFa19q1LeF1x02nLDOoBRRvBqUA/exec";
 const getEP = () => localStorage.getItem("fv_ep") || DEFAULT_EP;
 function saveEndpoint(){
   const v = document.getElementById("endpointInput").value.trim();
@@ -861,36 +861,53 @@ function renderDashboard(td, cd){
 
   if(!td || !td.ok) return;
 
-  // Balance
-  const { gastosFijos, gastosVariables, cuotas } = td;
-  const totalEgr = (gastosFijos?.pagados||0) + (gastosVariables?.total||0);
-  document.getElementById("db-egresos").textContent = fmtPeso(totalEgr);
-  document.getElementById("db-fijos-pag").textContent  = fmtPeso(gastosFijos?.pagados||0);
-  document.getElementById("db-fijos-pend").textContent = fmtPeso(gastosFijos?.pendientes||0);
+  // Desestructurar campos del nuevo getTableroData
+  const { gastosFijos, gastosVariables, cuotas, prestamos,
+          totalEgresos, ingreso, balance, proyeccion } = td;
+
+  // Stats
+  document.getElementById("db-egresos").textContent =
+    fmtPeso(totalEgresos || (gastosFijos?.total||0) + (gastosVariables?.total||0));
+  document.getElementById("db-fijos-pag").textContent  =
+    fmtPeso(gastosFijos?.total || gastosFijos?.pagados || 0);
+  document.getElementById("db-fijos-pend").textContent =
+    fmtPeso(gastosFijos?.pendientes || 0);
 
   // Cuotas
-  const totCuota = cd?.totalMes || cuotas?.totalMes || 0;
+  const totCuota = td.cuotas?.totalMes || cd?.totalMes || 0;
   document.getElementById("db-cuotas").textContent = fmtPeso(totCuota);
 
   // Balance card
-  const balEl = document.getElementById("db-balance");
-  balEl.textContent = "— (ingresar en Sheet)";
-  balEl.className = "balance-amount neutral";
+  const balEl  = document.getElementById("db-balance");
+  const balSub = document.getElementById("db-balance-sub");
+  if (balance !== null && balance !== undefined) {
+    balEl.textContent = fmtPeso(Math.abs(balance));
+    balEl.className   = "balance-amount " + (balance >= 0 ? "positive" : "negative");
+    balSub.textContent = (balance >= 0 ? "✅ Superávit del mes" : "⚠️ Déficit del mes")
+      + "  ·  Ingresos: " + fmtPeso(ingreso||0);
+  } else {
+    balEl.textContent  = "—";
+    balEl.className    = "balance-amount neutral";
+    balSub.textContent = ingreso > 0
+      ? "Ingreso registrado: " + fmtPeso(ingreso)
+      : "Ingresá el ingreso del mes en col K del Tablero";
+  }
 
-  // Tarjetas
-  const tarjEl = document.getElementById("db-tarjetas");
+  // Tarjetas con saldos reales
+  const tarjEl   = document.getElementById("db-tarjetas");
   const tarjetas = [
-    {nombre:"VISA BNA",          titular:"Soledad"},
-    {nombre:"VISA PATAGONIA",    titular:"Soledad"},
-    {nombre:"MC PATAGONIA",      titular:"Soledad"},
+    {nombre:"VISA BNA",               titular:"Soledad"},
+    {nombre:"VISA PATAGONIA",         titular:"Soledad"},
+    {nombre:"MC PATAGONIA",           titular:"Soledad"},
     {nombre:"VISA PATAGONIA GABRIEL", titular:"Gabriel"},
   ];
-  const varByTarj = gastosVariables?.porTarjeta || {};
+  const varByTarj  = gastosVariables?.porTarjeta || {};
+  const cuotasList = td.cuotas?.detalle || cd?.cuotas || [];
 
   tarjEl.innerHTML = tarjetas.map(t => {
-    const saldo = varByTarj[t.nombre] || 0;
-    const cuotaTarj = cd?.cuotas?.filter(c=>c.tarjeta===t.nombre)
-                          .reduce((s,c)=>s+c.montoCuota,0) || 0;
+    const saldo     = varByTarj[t.nombre] || 0;
+    const cuotaTarj = cuotasList.filter(c => c.tarjeta === t.nombre)
+                                .reduce((s,c) => s + (c.montoCuota||0), 0);
     const color = TARJETA_COLORS[t.nombre] || "#555";
     return `<div class="tarjeta-row">
       <div class="tarjeta-dot" style="background:${color}"></div>
@@ -899,32 +916,39 @@ function renderDashboard(td, cd){
         <div class="tarjeta-titular">${t.titular}</div>
       </div>
       <div style="margin-left:auto;text-align:right">
-        <div class="tarjeta-monto">${saldo>0?fmtPeso(saldo):'—'}</div>
-        ${cuotaTarj>0?`<div class="tarjeta-cuota">cuotas: ${fmtPeso(cuotaTarj)}/mes</div>`:''}
+        <div class="tarjeta-monto">${saldo > 0 ? fmtPeso(saldo) : '—'}</div>
+        ${cuotaTarj > 0
+          ? `<div class="tarjeta-cuota">cuotas: ${fmtPeso(cuotaTarj)}/mes</div>` : ''}
       </div>
     </div>`;
   }).join("");
 
-  // Proyección 3 meses
-  const hoy = new Date();
-  const proxMeses = [0,1,2].map(i=>{
-    const d = new Date(hoy.getFullYear(), hoy.getMonth()+i, 1);
-    return MESES_ES[d.getMonth()];
-  });
+  // Proyección 3 meses — desde el Sheet (real)
   const proyEl = document.getElementById("db-proyeccion");
-  proyEl.innerHTML = proxMeses.map(m => {
-    const cuotasM = cd?.cuotas?.reduce((s,c)=>{
-      // si la cuota impacta en este mes
-      return s + (c.montoCuota||0);
-    },0) || 0;
-    return `<div class="progress-block">
-      <div class="progress-header">
-        <span class="progress-label">${m}</span>
-        <span class="progress-val" style="color:var(--gold)">${fmtPeso(cuotasM)}</span>
-      </div>
-    </div>`;
-  }).join("");
-}
+  const proy   = proyeccion || [];
+  if (proy.length > 0) {
+    // Calcular máximo para las barras de progreso
+    const maxProy = Math.max(...proy.map(p => p.total), 1);
+    proyEl.innerHTML = proy.map((p, i) => {
+      const pct = Math.round((p.total / maxProy) * 100);
+      return `<div class="progress-block">
+        <div class="progress-header">
+          <span class="progress-label" style="${i===0?'color:var(--accent);font-weight:600':''}">
+            ${p.mes}${i===0?' (este mes)':''}
+          </span>
+          <span class="progress-val" style="color:var(--gold)">${fmtPeso(p.total)}</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${pct}%;background:${
+            i===0?'var(--accent)':i===1?'var(--gold)':'var(--muted)'
+          }"></div>
+        </div>
+      </div>`;
+    }).join("");
+  } else {
+    proyEl.innerHTML = `<div class="empty" style="padding:16px">
+      <p>Sin datos de proyección</p></div>`;
+  }
 
 // ─── GASTOS FIJOS ─────────────────────────────────────────────────────────────
 async function loadGastosFijos(){
@@ -1270,12 +1294,40 @@ function toast(msg,type="ok"){
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded",()=>{
+document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
   const mes = MESES_ES[new Date().getMonth()];
-  document.getElementById("mesLabel").textContent = mes+" 2026";
+  document.getElementById("mesLabel").textContent = mes + " 2026";
+
+  // Detectar apertura desde file:// — fetch no funciona en ese protocolo
+  if (window.location.protocol === "file:") {
+    document.body.innerHTML = `
+      <div style="font-family:'JetBrains Mono',monospace;background:#080B14;color:#E8EDF8;
+                  min-height:100dvh;display:flex;flex-direction:column;align-items:center;
+                  justify-content:center;padding:24px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:16px">⚠️</div>
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;
+                    margin-bottom:10px;color:#FF3B6E">Abrí desde GitHub Pages</div>
+        <p style="color:#5A6480;font-size:13px;line-height:1.7;max-width:320px;margin-bottom:24px">
+          Los navegadores bloquean las conexiones cuando el archivo se abre
+          directo del escritorio (<code>file://</code>).<br><br>
+          Necesitás abrirlo desde tu link de GitHub Pages:
+        </p>
+        <div style="background:#0D1220;border:1px solid #1E2535;border-radius:10px;
+                    padding:14px 20px;font-size:12px;color:#3E7BFA;word-break:break-all;
+                    max-width:360px;margin-bottom:20px" id="ghLink">
+          https://TU-USUARIO.github.io/finanzas-app/
+        </div>
+        <p style="color:#5A6480;font-size:11px;line-height:1.6">
+          Si aún no lo subiste a GitHub Pages:<br>
+          Repo → Settings → Pages → Branch: main → / (root) → Save
+        </p>
+      </div>`;
+    return;
+  }
+
   checkSetup();
-  if(getEP()) loadDashboard();
+  loadDashboard();
 });
 </script>
 </body>
