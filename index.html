@@ -453,20 +453,6 @@ label.field-label{
 </head>
 <body>
 
-<!-- Setup -->
-<div class="setup" id="setup">
-  <div class="setup-emoji">💰</div>
-  <div class="setup-title"><em>Finanzas</em> Compartidas</div>
-  <p class="setup-sub">Ingresá la URL de tu Google Apps Script para conectar la planilla</p>
-  <input class="setup-input" type="url" id="endpointInput" placeholder="https://script.google.com/macros/s/..." autocomplete="off" spellcheck="false">
-  <button class="setup-btn" onclick="saveEndpoint()">Conectar planilla →</button>
-  <p class="setup-help">
-    1. Abrí <a href="https://script.google.com" target="_blank">script.google.com</a><br>
-    2. Implementar → App web → Acceso: <strong>Cualquier persona</strong><br>
-    3. Copiá la URL y pegala arriba
-  </p>
-</div>
-
 <!-- App -->
 <div class="app">
   <div class="header">
@@ -478,7 +464,6 @@ label.field-label{
       <button class="icon-btn" onclick="refreshAll()" title="Actualizar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       </button>
-      <button class="icon-btn" onclick="showSetup()" title="Config">⚙️</button>
     </div>
   </div>
 
@@ -1300,35 +1285,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
   const mes = MESES_ES[new Date().getMonth()];
   document.getElementById("mesLabel").textContent = mes + " 2026";
-
-  // Detectar apertura desde file:// — fetch no funciona en ese protocolo
-  if (window.location.protocol === "file:") {
-    document.body.innerHTML = `
-      <div style="font-family:'JetBrains Mono',monospace;background:#080B14;color:#E8EDF8;
-                  min-height:100dvh;display:flex;flex-direction:column;align-items:center;
-                  justify-content:center;padding:24px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:16px">⚠️</div>
-        <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;
-                    margin-bottom:10px;color:#FF3B6E">Abrí desde GitHub Pages</div>
-        <p style="color:#5A6480;font-size:13px;line-height:1.7;max-width:320px;margin-bottom:24px">
-          Los navegadores bloquean las conexiones cuando el archivo se abre
-          directo del escritorio (<code>file://</code>).<br><br>
-          Necesitás abrirlo desde tu link de GitHub Pages:
-        </p>
-        <div style="background:#0D1220;border:1px solid #1E2535;border-radius:10px;
-                    padding:14px 20px;font-size:12px;color:#3E7BFA;word-break:break-all;
-                    max-width:360px;margin-bottom:20px" id="ghLink">
-          https://TU-USUARIO.github.io/finanzas-app/
-        </div>
-        <p style="color:#5A6480;font-size:11px;line-height:1.6">
-          Si aún no lo subiste a GitHub Pages:<br>
-          Repo → Settings → Pages → Branch: main → / (root) → Save
-        </p>
-      </div>`;
-    return;
-  }
-
-  checkSetup();
   loadDashboard();
 });
 </script>
