@@ -883,13 +883,13 @@ function renderDashboard(td, cd){
   const { gastosFijos, gastosVariables, cuotas, prestamos,
           totalEgresos, ingreso, balance, proyeccion } = td;
 
-  // Stats
+  // Stats — gastos fijos desde checkboxes reales de PAGOS DEL MES
   document.getElementById("db-egresos").textContent =
     fmtPeso(totalEgresos || (gastosFijos?.total||0) + (gastosVariables?.total||0));
   document.getElementById("db-fijos-pag").textContent  =
-    fmtPeso(gastosFijos?.total || gastosFijos?.pagados || 0);
+    fmtPeso(gastosFijos?.pagados ?? gastosFijos?.total ?? 0);
   document.getElementById("db-fijos-pend").textContent =
-    fmtPeso(gastosFijos?.pendientes || 0);
+    fmtPeso(gastosFijos?.pendientes ?? 0);
 
   // Cuotas
   const totCuota = td.cuotas?.totalMes || cd?.totalMes || 0;
@@ -1000,47 +1000,52 @@ async function regenerarChecklist(){
 }
 
 function renderGastosFijos(items){
-  // Todos los ítems con monto = registrados en el Sheet
-  // Los que no tienen monto = aún no cargados este mes
-  // El "pagado" real se verifica en PAGOS DEL MES con el checkbox
-  let conMonto = 0, sinMonto = 0;
+  let montoPagado = 0, montoPendiente = 0, sinDato = 0;
   const bySec = {};
 
   items.forEach(item => {
     if(!bySec[item.categoria]) bySec[item.categoria]=[];
     bySec[item.categoria].push(item);
-    if(item.monto > 0) conMonto += item.monto;
-    else sinMonto++;
+    if(item.monto > 0) {
+      if(item.pagado) montoPagado   += item.monto;
+      else            montoPendiente += item.monto;
+    } else {
+      sinDato++;
+    }
   });
 
-  document.getElementById("fijos-tot-pag").textContent  = fmtPeso(conMonto);
-  document.getElementById("fijos-tot-pend").textContent = sinMonto + " sin dato";
+  document.getElementById("fijos-tot-pag").textContent  = fmtPeso(montoPagado);
+  document.getElementById("fijos-tot-pend").textContent = montoPendiente > 0
+    ? fmtPeso(montoPendiente)
+    : (sinDato > 0 ? sinDato + " sin dato" : "$0");
 
-  // Cambiar labels de las tarjetas superiores
-  document.querySelector("#fijos-totals-row .fijo-total-label").textContent = "Con monto este mes";
+  // Actualizar labels
   const labels = document.querySelectorAll("#fijos-totals-row .fijo-total-label");
-  if(labels[1]) labels[1].textContent = "Sin dato aún";
+  if(labels[0]) labels[0].textContent = "Pagados ✓";
+  if(labels[1]) labels[1].textContent = "Pendientes";
 
   let html = "";
   for(const [sec, itms] of Object.entries(bySec)){
     html += `<div class="fijos-section">
       <div class="fijos-section-title">${sec}</div>`;
     itms.forEach(item => {
-      // Sin onclick — la hoja GASTOS FIJOS es de solo lectura desde la app.
-      // La verificación de pago se hace en PAGOS DEL MES del Sheet.
-      const tieneData = item.monto > 0;
-      html += `<div class="fijo-item" style="cursor:default">
-        <div class="fijo-check ${tieneData ? 'checked' : ''}">
-          ${tieneData ? '✓' : ''}
-        </div>
+      const tieneDato = item.monto > 0;
+      const checkCls  = item.pagado ? "checked" : "";
+      const icon      = item.pagado ? "✓" : "";
+      // Color según estado: verde=pagado, naranja=pendiente con monto, amarillo=sin dato
+      const bg   = item.pagado ? "rgba(39,174,96,.08)" : (tieneDato ? "rgba(255,59,110,.05)" : "rgba(240,165,0,.05)");
+      html += `<div class="fijo-item" style="cursor:default;background:${bg}">
+        <div class="fijo-check ${checkCls}">${icon}</div>
         <div class="fijo-info">
           <div class="fijo-name">${item.descripcion}</div>
-          ${tieneData
-            ? '<div class="fijo-meta" style="color:var(--green)">✅ Monto registrado</div>'
-            : '<div class="fijo-meta">📝 Sin dato este mes — cargarlo en el Sheet</div>'}
+          ${item.pagado
+            ? `<div class="fijo-meta" style="color:var(--green)">✅ Pagado${item.pago ? ' · ' + item.pago : ''}${item.fechaPago ? ' · ' + item.fechaPago : ''}</div>`
+            : tieneDato
+              ? `<div class="fijo-meta" style="color:var(--accent)">⏳ Pendiente de marcar como pagado en PAGOS DEL MES</div>`
+              : `<div class="fijo-meta" style="color:var(--gold)">📝 Sin dato este mes — cargarlo en el Sheet</div>`}
         </div>
         <div class="fijo-amount">
-          ${tieneData
+          ${tieneDato
             ? `<div class="amt">${fmtPeso(item.monto)}</div>`
             : `<div class="amt zero">—</div>`}
         </div>
@@ -1049,10 +1054,9 @@ function renderGastosFijos(items){
     html += `</div>`;
   }
 
-  // Nota aclaratoria al final
-  html += `<div style="padding:14px 14px 4px;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);margin-top:8px">
-    ✏️ <strong>Los montos se cargan directamente en el Sheet</strong> (pestaña GASTOS FIJOS).<br>
-    ✅ <strong>La verificación de pago</strong> se hace en la pestaña PAGOS DEL MES del Sheet.
+  html += `<div style="padding:12px 14px 4px;font-size:10px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);margin-top:8px">
+    📋 Montos → pestaña <strong>GASTOS FIJOS</strong> del Sheet<br>
+    ✅ Marcar como pagado → pestaña <strong>PAGOS DEL MES</strong> del Sheet
   </div>`;
 
   if(!html) html = '<div class="empty"><div class="empty-icon">📋</div><p>No hay ítems de gastos fijos</p></div>';
