@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080B14">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Finanzas Compartidas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -532,7 +531,12 @@ label.field-label{
 
     <button class="refresh-btn" onclick="loadGastosFijos()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      Actualizar desde el Sheet
+      Actualizar lista desde el Sheet
+    </button>
+
+    <button class="refresh-btn" onclick="regenerarChecklist()" style="border-color:var(--gold);color:var(--gold)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Regenerar PAGOS DEL MES en el Sheet
     </button>
 
     <div id="fijos-list">
@@ -977,6 +981,21 @@ async function loadGastosFijos(){
   } catch(e){
     document.getElementById("fijos-list").innerHTML =
       '<div class="empty"><div class="empty-icon">📡</div><p>No se pudo conectar con la planilla</p></div>';
+  }
+}
+
+// Regenera el checklist PAGOS DEL MES desde cero con todos los datos actuales
+async function regenerarChecklist(){
+  toast("Regenerando PAGOS DEL MES...", "info");
+  try {
+    const res = await api({ action: "generarChecklist" });
+    if(res && res.ok){
+      toast("✅ PAGOS DEL MES actualizado — abrí el Sheet para verlo", "ok");
+    } else {
+      toast("Error: " + (res?.error || "desconocido"), "err");
+    }
+  } catch(e){
+    toast("Error de conexión", "err");
   }
 }
 
